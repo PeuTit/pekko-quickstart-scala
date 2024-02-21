@@ -1,20 +1,39 @@
 name := "pekko-quickstart-scala"
 
-version := "1.0"
+lazy val carSimulationProject = project
+  .in(file("."))
+  .settings(
+    settings,
+    libraryDependencies ++= Seq(
+      library.logback,
+      library.pekko,
+      library.scalaTest,
+      library.pekkoHttpTestKit
+    )
+  )
 
-scalaVersion := "2.13.12"
+lazy val library = new {
+  object version {
+    val scala = "2.13.12"
+    val pekkoVersion = "1.0.2"
+    val logback = "1.2.13"
+  }
 
-lazy val pekkoVersion = "1.0.2"
+  val logback = "ch.qos.logback" % "logback-classic" % version.logback
 
-// Run in a separate JVM, to make sure sbt waits until all threads have
-// finished before returning.
-// If you want to keep the application running while executing other
-// sbt tasks, consider https://github.com/spray/sbt-revolver/
-fork := true
+  val pekko =
+    "org.apache.pekko" %% "pekko-actor-typed" % version.pekkoVersion
 
-libraryDependencies ++= Seq(
-  "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
-  "ch.qos.logback" % "logback-classic" % "1.2.13",
-  "org.apache.pekko" %% "pekko-actor-testkit-typed" % pekkoVersion % Test,
-  "org.scalatest" %% "scalatest" % "3.2.17" % Test
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.17" % Test
+  val pekkoHttpTestKit =
+    "org.apache.pekko" %% "pekko-actor-testkit-typed" % version.pekkoVersion % Test
+}
+
+lazy val settings =
+  commonSettings
+
+lazy val commonSettings = Seq(
+  version := "1.0",
+  scalaVersion := library.version.scala,
+  fork := true
 )
