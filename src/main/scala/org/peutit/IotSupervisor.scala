@@ -10,14 +10,14 @@ import org.apache.pekko.actor.typed.PostStop
 
 class IotSupervisor(context: ActorContext[Nothing])
     extends AbstractBehavior[Nothing](context) {
-  context.log.info("IotSupervisor Started")
+  context.log.info("🦸🦸 IotSupervisor Started")
 
   override def onMessage(msg: Nothing): Behavior[Nothing] =
     Behaviors.unhandled
 
   override def onSignal: PartialFunction[Signal, Behavior[Nothing]] = {
     case PostStop => {
-      context.log.info("IotSupervisor Stopped")
+      context.log.info("🦸🦸 IotSupervisor Stopped")
       this
     }
   }
