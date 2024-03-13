@@ -1,5 +1,7 @@
 package org.peutit
 
+import scala.concurrent.duration.DurationInt
+
 import org.apache.pekko.actor.typed.scaladsl.ActorContext
 import org.apache.pekko.actor.typed.scaladsl.AbstractBehavior
 import org.apache.pekko.actor.typed.Behavior
@@ -15,7 +17,8 @@ class CarGroup(context: ActorContext[CarGroup.Command])(makeGroup: String)
     RequestTrackCar,
     CarRegistered,
     RequestCarList,
-    ReplyCarList
+    ReplyCarList,
+    RequestAllSpeeds
   }
 
   context.log.info("🚥🚥 CarGroup {} Started", makeGroup)
@@ -78,6 +81,11 @@ class CarGroup(context: ActorContext[CarGroup.Command])(makeGroup: String)
           vin
         )
         carModelToActor -= model
+        this
+      case RequestAllSpeeds(requestId, `makeGroup`, replyTo) =>
+        context.spawnAnonymous(
+          CarGroupQuery(carModelToActor, requestId, requester = replyTo, timeout = 3.seconds)
+          )
         this
       case _ =>
         Behaviors.unhandled

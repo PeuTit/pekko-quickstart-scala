@@ -8,7 +8,16 @@ import org.apache.pekko.actor.testkit.typed.scaladsl.TestProbe
 import org.apache.pekko.actor.typed.ActorRef
 
 import Car.{SpeedRecorded, RecordSpeed, Stop}
-import CarManager.{CarRegistered, RequestTrackCar, RequestCarList, ReplyCarList}
+import CarManager.{
+  CarRegistered,
+  RequestTrackCar,
+  RequestCarList,
+  ReplyCarList,
+  Speed,
+  RespondAllSpeeds,
+  RequestAllSpeeds,
+  SpeedNotAvailable
+}
 
 class CarGroupSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   "CarGroup Actor" should {
@@ -180,6 +189,69 @@ class CarGroupSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
         groupActor ! RequestCarList(requestId = 1, makeGroup, replyProbe.ref)
         replyProbe.expectMessage(ReplyCarList(requestId = 1, Set(model2)))
       }
+    }
+
+    "be able to collect speed readings from all cars" in {
+      val makeGroup: String = "Alpine"
+      val model1 = "A110-2017"
+      val model2 = "A110s-2017"
+      val model3 = "A110"
+
+      val registerProbe: TestProbe[CarRegistered] =
+        createTestProbe[CarRegistered]()
+      val groupActor: ActorRef[CarGroup.Command] = spawn(CarGroup(makeGroup))
+
+      groupActor ! RequestTrackCar(
+        makeGroup,
+        model1,
+        "fastestfrenchyontheroad",
+        registerProbe.ref
+      )
+      val carActor1 = registerProbe.receiveMessage().car
+
+      groupActor ! RequestTrackCar(
+        makeGroup,
+        model2,
+        "thisisthefastestfrenchyontheroad",
+        registerProbe.ref
+      )
+      val carActor2 = registerProbe.receiveMessage().car
+
+      groupActor ! RequestTrackCar(
+        makeGroup,
+        model3,
+        "theoriginalfrenchy",
+        registerProbe.ref
+      )
+      registerProbe.receiveMessage().car
+
+      val recordProbe: TestProbe[SpeedRecorded] =
+        createTestProbe[SpeedRecorded]()
+      carActor1 ! RecordSpeed(requestId = 0, 1234, recordProbe.ref)
+      recordProbe.expectMessage(SpeedRecorded(requestId = 0))
+
+      carActor2 ! RecordSpeed(requestId = 1, 7890, recordProbe.ref)
+      recordProbe.expectMessage(SpeedRecorded(requestId = 1))
+      // No Speed Recorded for Car3
+
+      val allSpeedProbe: TestProbe[RespondAllSpeeds] =
+        createTestProbe[RespondAllSpeeds]()
+      groupActor ! RequestAllSpeeds(
+        requestId = 0,
+        make = makeGroup,
+        allSpeedProbe.ref
+      )
+
+      allSpeedProbe.expectMessage(
+        RespondAllSpeeds(
+          requestId = 0,
+          speeds = Map(
+            model1 -> Speed(1234),
+            model2 -> Speed(7890),
+            model3 -> SpeedNotAvailable
+          )
+        )
+      )
     }
   }
 }

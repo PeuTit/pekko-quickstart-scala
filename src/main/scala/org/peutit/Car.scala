@@ -32,7 +32,7 @@ class Car(context: ActorContext[Car.Command])(
         this
 
       case ReadSpeed(requestId, replyTo) =>
-        replyTo ! RespondSpeed(requestId, speedMeasure)
+        replyTo ! RespondSpeed(requestId, speedMeasure, model)
         this
 
       case Stop =>
@@ -58,7 +58,7 @@ object Car {
   sealed trait Command
   final case class ReadSpeed(requestId: Long, replyTo: ActorRef[RespondSpeed])
       extends Car.Command
-  final case class RespondSpeed(requestId: Long, value: Option[Double])
+  final case class RespondSpeed(requestId: Long, value: Option[Double], model: String)
 
   final case class RecordSpeed(
       requestId: Long,

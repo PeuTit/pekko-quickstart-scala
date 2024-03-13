@@ -45,6 +45,8 @@ class CarManager(context: ActorContext[CarManager.Command])
         makeToActor -= make
         this
       }
+      case _ =>
+        Behaviors.unhandled
     }
 
   override def onSignal: PartialFunction[Signal, Behavior[Command]] = {
@@ -78,4 +80,24 @@ object CarManager {
   final case class ReplyCarList(requestId: Long, carModels: Set[String])
 
   final case class CarGroupTerminated(make: String) extends CarManager.Command
+
+  final case class RequestAllSpeeds(
+      requestId: Long,
+      make: String,
+      replyTo: ActorRef[RespondAllSpeeds]
+  ) extends CarGroupQuery.Command
+      with CarGroup.Command
+      with CarManager.Command
+
+  final case class RespondAllSpeeds(
+      requestId: Long,
+      speeds: Map[String, SpeedReading]
+  )
+
+  sealed trait SpeedReading
+
+  final case class Speed(value: Double) extends SpeedReading
+  case object SpeedNotAvailable extends SpeedReading
+  case object CarNotAvailable extends SpeedReading
+  case object CarTimedOut extends SpeedReading
 }
